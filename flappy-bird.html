@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flappy Bird Game</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: #ffffff;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            width: 100%;
+        }
+
+        h1 {
+            text-align: center;
+            color: #1F2937;
+            margin-bottom: 10px;
+            font-size: 2.5rem;
+        }
+
+        .instructions {
+            text-align: center;
+            color: #6B7280;
+            margin-bottom: 30px;
+            font-size: 1.1rem;
+        }
+
+        .game-container {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 40px;
+        }
+
+        canvas {
+            border: 4px solid #0EA5E9;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px -10px rgba(14, 165, 233, 0.3);
+            cursor: pointer;
+            background: #ffffff;
+        }
+
+        .controls {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .controls h2 {
+            color: #1F2937;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+        }
+
+        .controls-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .upload-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .upload-group label {
+            color: #374151;
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+        }
+
+        .upload-btn {
+            background: white;
+            border: 2px solid #D1D5DB;
+            padding: 10px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 0.9rem;
+            color: #374151;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .upload-btn:hover {
+            border-color: #0EA5E9;
+            background: #F0F9FF;
+        }
+
+        .upload-btn::before {
+            content: "📁";
+            font-size: 1.2rem;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        /* Game Over Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 40px;
+            border-radius: 16px;
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal-content img {
+            width: 100%;
+            max-height: 200px;
+            object-fit: contain;
+            margin-bottom: 20px;
+            border-radius: 8px;
+        }
+
+        .modal-content h2 {
+            color: #1F2937;
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+        .modal-content p {
+            color: #6B7280;
+            font-size: 1.3rem;
+            margin-bottom: 30px;
+        }
+
+        .restart-btn {
+            background: #0EA5E9;
+            color: white;
+            border: none;
+            padding: 14px 40px;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            width: 100%;
+        }
+
+        .restart-btn:hover {
+            background: #0284C7;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(14, 165, 233, 0.4);
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2rem;
+            }
+
+            canvas {
+                width: 100%;
+                height: auto;
+            }
+
+            .controls-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Bhaag Jeetu Bhaag</h1>
+        <p class="instructions" id="instructions">Help jitu sir run away from anjali</p>
+
+        <div class="game-container">
+            <!-- Increased canvas width to give more horizontal play area -->
+            <canvas id="gameCanvas" width="800" height="600"></canvas>
+        </div>
+
+        <div class="controls">
+            <h2>Customize Your Game</h2>
+            <div class="controls-grid">
+                <div class="upload-group">
+                    <label for="bird-upload">Bird Image</label>
+                    <input type="file" id="bird-upload" accept="image/*">
+                    <label for="bird-upload" class="upload-btn">Upload Bird</label>
+                </div>
+
+                <div class="upload-group">
+                    <label for="pipe-upload">Pipe Image</label>
+                    <input type="file" id="pipe-upload" accept="image/*">
+                    <label for="pipe-upload" class="upload-btn">Upload Pipe</label>
+                </div>
+
+                <div class="upload-group">
+                    <label for="bg-upload">Background Image</label>
+                    <input type="file" id="bg-upload" accept="image/*">
+                    <label for="bg-upload" class="upload-btn">Upload Background</label>
+                </div>
+
+                <div class="upload-group">
+                    <label for="gameover-upload">Game Over Image</label>
+                    <input type="file" id="gameover-upload" accept="image/*">
+                    <label for="gameover-upload" class="upload-btn">Upload Game Over</label>
+                </div>
+
+                <div class="upload-group">
+                    <label for="bgmusic-upload">Background Music</label>
+                    <input type="file" id="bgmusic-upload" accept="audio/*">
+                    <label for="bgmusic-upload" class="upload-btn">Upload Music</label>
+                </div>
+
+                <div class="upload-group">
+                    <label for="crash-upload">Crash Sound</label>
+                    <input type="file" id="crash-upload" accept="audio/*">
+                    <label for="crash-upload" class="upload-btn">Upload Crash Sound</label>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Game Over Modal -->
+    <div id="gameOverModal" class="modal">
+        <div class="modal-content">
+            <img id="gameOverImage" src="" alt="Game Over" style="display: none;">
+            <h2>Game Over!</h2>
+            <p>Final Score: <span id="finalScore">0</span></p>
+            <button class="restart-btn" onclick="restartGame()">Play Again</button>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const modal = document.getElementById('gameOverModal');
+        const finalScoreEl = document.getElementById('finalScore');
+        const instructionsEl = document.getElementById('instructions');
+        const gameOverImageEl = document.getElementById('gameOverImage');
+
+    // Custom assets
+    let birdImage = null;
+    let pipeImage = null;
+    let bgImage = null;
+    let gameOverImage = null; // uploaded game over image (from UI)
+    let bgMusic = null;
+    let crashSound = null;
+
+    // Default popup images (loaded from project root if present)
+    let defaultWinImage = null;
+    let defaultGameOverImage = null;
+
+        // Load default project assets (if present) so the game uses your
+        // provided images without requiring manual upload.
+        (function loadDefaultAssets() {
+            // Helper to create an Image and attach basic handlers
+            function makeImage(path, onload) {
+                const img = new Image();
+                img.src = path;
+                img.onload = () => {
+                    if (typeof onload === 'function') onload(img);
+                };
+                img.onerror = () => {
+                    // If the file isn't present or fails to load, ignore.
+                };
+                return img;
+            }
+
+            // Attempt to load files from the same folder as the HTML file
+            // (background.jpg, bird.png, pillar.png).
+            birdImage = makeImage('bird.png', (img) => {
+                // If the bird image loads, size the bird to the image's natural size
+                // but apply the configured birdScale (0.8) so it's slightly smaller.
+                if (img.width && img.height) {
+                    bird.width = Math.round(img.width * birdScale);
+                    bird.height = Math.round(img.height * birdScale);
+                }
+            });
+
+            // Load pillar image as the visual for pipes, but do NOT change
+            // the game's pipeWidth — keep the original gameplay dimensions.
+            pipeImage = makeImage('pillar.png');
+
+            // Background image
+            bgImage = makeImage('background.jpeg');
+
+            // Default popup images (win / game over)
+            defaultWinImage = makeImage('win.png');
+            defaultGameOverImage = makeImage('gameOver.jpg');
+        })();
+
+        // Game variables
+    // Bird scale: reduce current bird size by 0.5x so it's easier to play
+    const birdScale = 0.3;
+
+        // Increased bird size originally was 1.5x; keep that base but apply birdScale
+        let bird = {
+            x: 50,
+            y: 150,
+            width: Math.round(34 * 1.5 * birdScale),
+            height: Math.round(24 * 1.5 * birdScale),
+            velocity: 0,
+            gravity: 0.5,
+            jump: -8
+        };
+
+        let pipes = [];
+        let frameCount = 0;
+        let score = 0;
+        let gameActive = false;
+        let gameStarted = false;
+        let animationId;
+
+    const pipeWidth = 52;
+    // Increased gap to make the game easier (was 120, then 180)
+    const pipeGap = 240;
+        const pipeFrequency = 90;
+
+        // File upload handlers
+        document.getElementById('bird-upload').addEventListener('change', (e) => {
+            handleImageUpload(e, 'bird');
+        });
+
+        document.getElementById('pipe-upload').addEventListener('change', (e) => {
+            handleImageUpload(e, 'pipe');
+        });
+
+        document.getElementById('bg-upload').addEventListener('change', (e) => {
+            handleImageUpload(e, 'bg');
+        });
+
+        document.getElementById('gameover-upload').addEventListener('change', (e) => {
+            handleImageUpload(e, 'gameOver');
+        });
+
+        document.getElementById('bgmusic-upload').addEventListener('change', (e) => {
+            handleAudioUpload(e, 'bgMusic');
+        });
+
+        document.getElementById('crash-upload').addEventListener('change', (e) => {
+            handleAudioUpload(e, 'crash');
+        });
+
+        function handleImageUpload(event, type) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const img = new Image();
+            img.src = URL.createObjectURL(file);
+            img.onload = () => {
+                switch(type) {
+                    case 'bird':
+                        birdImage = img;
+                        // If the user uploads a bird, size it to the uploaded
+                        // image's natural dimensions scaled by birdScale so it
+                        // remains playable.
+                        if (img.width && img.height) {
+                            bird.width = Math.round(img.width * birdScale);
+                            bird.height = Math.round(img.height * birdScale);
+                        }
+                        break;
+                    case 'pipe':
+                        pipeImage = img;
+                        break;
+                    case 'bg':
+                        bgImage = img;
+                        break;
+                    case 'gameOver':
+                        gameOverImage = img;
+                        gameOverImageEl.src = img.src;
+                        gameOverImageEl.style.display = 'block';
+                        break;
+                }
+            };
+        }
+
+        function handleAudioUpload(event, type) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const audio = new Audio();
+            audio.src = URL.createObjectURL(file);
+
+            if (type === 'bgMusic') {
+                bgMusic = audio;
+            } else if (type === 'crash') {
+                crashSound = audio;
+            }
+        }
+
+        function drawBird() {
+            if (birdImage && birdImage.complete) {
+                ctx.drawImage(birdImage, bird.x, bird.y, bird.width, bird.height);
+            } else {
+                // Default bird (simple rectangle) — draw an eye positioned
+                // relative to the bird size so it looks correct at different scales.
+                ctx.fillStyle = '#FCD34D';
+                ctx.fillRect(bird.x, bird.y, bird.width, bird.height);
+                ctx.fillStyle = '#000';
+                const eyeX = bird.x + Math.round(bird.width * 0.65);
+                const eyeY = bird.y + Math.round(bird.height * 0.3);
+                const eyeSize = Math.max(1, Math.round(Math.min(bird.width, bird.height) * 0.12));
+                ctx.fillRect(eyeX, eyeY, eyeSize, eyeSize);
+            }
+        }
+
+        function drawPipe(x, y, width, height) {
+            if (pipeImage && pipeImage.complete) {
+                // Draw the uploaded pipe image into the pipe rectangle using drawImage
+                // This draws the image directly into the pipe bounds so the image
+                // is fixed relative to that pipe (no apparent internal "sliding"
+                // that can happen with patterns).
+                try {
+                    ctx.drawImage(pipeImage, x, y, width, height);
+                } catch (e) {
+                    // If drawImage fails for any reason, fallback to a simple fill
+                    ctx.fillStyle = '#10B981';
+                    ctx.fillRect(x, y, width, height);
+                    ctx.strokeStyle = '#059669';
+                    ctx.lineWidth = 2;
+                    ctx.strokeRect(x, y, width, height);
+                }
+            } else {
+                // Default pipe
+                ctx.fillStyle = '#10B981';
+                ctx.fillRect(x, y, width, height);
+                ctx.strokeStyle = '#059669';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(x, y, width, height);
+            }
+        }
+
+        function drawBackground() {
+            if (bgImage && bgImage.complete) {
+                ctx.drawImage(bgImage, 0, 0, canvas.width, canvas.height);
+            } else {
+                // Default gradient background
+                const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+                gradient.addColorStop(0, '#7DD3FC');
+                gradient.addColorStop(1, '#BAE6FD');
+                ctx.fillStyle = gradient;
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+            }
+        }
+
+        function drawScore() {
+            ctx.fillStyle = '#1F2937';
+            ctx.font = 'bold 24px Arial';
+            ctx.fillText(`Score: ${score}`, 10, 30);
+        }
+
+        function checkCollision() {
+            // Check ceiling and floor
+            if (bird.y <= 0 || bird.y + bird.height >= canvas.height) {
+                return true;
+            }
+
+            // Check pipes
+            for (let pipe of pipes) {
+                if (bird.x + bird.width > pipe.x &&
+                    bird.x < pipe.x + pipe.width &&
+                    (bird.y < pipe.y || bird.y + bird.height > pipe.y + pipeGap)) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        function gameLoop() {
+            if (!gameActive) return;
+
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw background
+            drawBackground();
+
+            // Update bird
+            bird.velocity += bird.gravity;
+            bird.y += bird.velocity;
+
+            // Draw bird
+            drawBird();
+
+            // Generate pipes
+            if (frameCount % pipeFrequency === 0) {
+                const pipeY = Math.random() * (canvas.height - pipeGap - 100) + 50;
+                pipes.push({
+                    x: canvas.width,
+                    y: pipeY,
+                    width: pipeWidth,
+                    gap: pipeGap
+                });
+            }
+
+            // Update and draw pipes
+            for (let i = pipes.length - 1; i >= 0; i--) {
+                pipes[i].x -= 2;
+
+                // Draw top pipe
+                drawPipe(pipes[i].x, 0, pipes[i].width, pipes[i].y);
+
+                // Draw bottom pipe
+                drawPipe(
+                    pipes[i].x,
+                    pipes[i].y + pipeGap,
+                    pipes[i].width,
+                    canvas.height - (pipes[i].y + pipeGap)
+                );
+
+                // Remove off-screen pipes
+                if (pipes[i].x + pipes[i].width < 0) {
+                    pipes.splice(i, 1);
+                    score++;
+
+                    // If player has passed 10 pillars, they win
+                    if (score >= 10) {
+                        gameActive = false;
+                        // Show win modal
+                        showGameOver(true);
+                        if (bgMusic) {
+                            bgMusic.pause();
+                        }
+                        return;
+                    }
+                }
+            }
+
+            // Draw score
+            drawScore();
+
+            // Check collision
+            if (checkCollision()) {
+                gameActive = false;
+                showGameOver(false);
+                if (crashSound) {
+                    crashSound.currentTime = 0;
+                    crashSound.play();
+                }
+                if (bgMusic) {
+                    bgMusic.pause();
+                }
+                return;
+            }
+
+            frameCount++;
+            animationId = requestAnimationFrame(gameLoop);
+        }
+
+        function handleJump() {
+            if (!gameActive) {
+                gameActive = true;
+                gameStarted = true;
+                instructionsEl.textContent = 'Click or press Space to flap!';
+                if (bgMusic) {
+                    bgMusic.currentTime = 0;
+                    bgMusic.loop = true;
+                    bgMusic.play();
+                }
+                gameLoop();
+            }
+            bird.velocity = bird.jump;
+        }
+
+        // Show the modal. If `won` is true, show the win image; otherwise show
+        // the game over image. Prefer the default (project) images if present,
+        // otherwise fall back to any uploaded `gameOverImage`.
+        function showGameOver(won = false) {
+            finalScoreEl.textContent = score;
+
+            if (won) {
+                if (defaultWinImage && defaultWinImage.src) {
+                    gameOverImageEl.src = defaultWinImage.src;
+                } else if (gameOverImage && gameOverImage.src) {
+                    // If user uploaded a specific gameOver image, use it as fallback
+                    gameOverImageEl.src = gameOverImage.src;
+                } else {
+                    gameOverImageEl.src = '';
+                }
+            } else {
+                if (defaultGameOverImage && defaultGameOverImage.src) {
+                    gameOverImageEl.src = defaultGameOverImage.src;
+                } else if (gameOverImage && gameOverImage.src) {
+                    gameOverImageEl.src = gameOverImage.src;
+                } else {
+                    gameOverImageEl.src = '';
+                }
+            }
+
+            if (gameOverImageEl.src) {
+                gameOverImageEl.style.display = 'block';
+            } else {
+                gameOverImageEl.style.display = 'none';
+            }
+
+            modal.classList.add('active');
+        }
+
+        function restartGame() {
+            // Reset game state
+            bird.y = 150;
+            bird.velocity = 0;
+            pipes = [];
+            frameCount = 0;
+            score = 0;
+            gameActive = false;
+            gameStarted = false;
+            modal.classList.remove('active');
+            instructionsEl.textContent = 'Click the game or press Space to start!';
+
+            // Clear canvas and draw initial state
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawBackground();
+            drawBird();
+            drawScore();
+        }
+
+        // Event listeners
+        window.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+                e.preventDefault();
+                handleJump();
+            }
+        });
+
+        canvas.addEventListener('click', handleJump);
+
+        // Initial draw
+        drawBackground();
+        drawBird();
+        drawScore();
+    </script>
+</body>
+</html>
