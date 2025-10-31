@@ -223,58 +223,9 @@
             <canvas id="gameCanvas" width="800" height="600"></canvas>
         </div>
 
-        <div class="controls">
-            <h2>Customize Your Game</h2>
-            <div class="controls-grid">
-                <div class="upload-group">
-                    <label for="bird-upload">Bird Image</label>
-                    <input type="file" id="bird-upload" accept="image/*">
-                    <label for="bird-upload" class="upload-btn">Upload Bird</label>
-                </div>
-
-                <div class="upload-group">
-                    <label for="pipe-upload">Pipe Image</label>
-                    <input type="file" id="pipe-upload" accept="image/*">
-                    <label for="pipe-upload" class="upload-btn">Upload Pipe</label>
-                </div>
-
-                <div class="upload-group">
-                    <label for="bg-upload">Background Image</label>
-                    <input type="file" id="bg-upload" accept="image/*">
-                    <label for="bg-upload" class="upload-btn">Upload Background</label>
-                </div>
-
-                <div class="upload-group">
-                    <label for="gameover-upload">Game Over Image</label>
-                    <input type="file" id="gameover-upload" accept="image/*">
-                    <label for="gameover-upload" class="upload-btn">Upload Game Over</label>
-                </div>
-
-                <div class="upload-group">
-                    <label for="bgmusic-upload">Background Music</label>
-                    <input type="file" id="bgmusic-upload" accept="audio/*">
-                    <label for="bgmusic-upload" class="upload-btn">Upload Music</label>
-                </div>
-
-                <div class="upload-group">
-                    <label for="crash-upload">Crash Sound</label>
-                    <input type="file" id="crash-upload" accept="audio/*">
-                    <label for="crash-upload" class="upload-btn">Upload Crash Sound</label>
-                </div>
-                
-                <div class="upload-group">
-                    <label for="lost-upload">Lost Sound</label>
-                    <input type="file" id="lost-upload" accept="audio/*">
-                    <label for="lost-upload" class="upload-btn">Upload Lost Sound</label>
-                </div>
-
-                <div class="upload-group">
-                    <label for="win-upload">Win Sound</label>
-                    <input type="file" id="win-upload" accept="audio/*">
-                    <label for="win-upload" class="upload-btn">Upload Win Sound</label>
-                </div>
-            </div>
-        </div>
+        <!-- Customization/upload UI removed — the game will use default assets located
+             next to index.html (bird.png, pillar.png, background.jpeg, win.png,
+             gameOver.jpg, bgmusic.mp3, lost.mp3, win.mp3). -->
     </div>
 
     <!-- Game Over Modal -->
@@ -296,11 +247,10 @@
     const gameOverImageEl = document.getElementById('gameOverImage');
     const modalTitleEl = document.getElementById('modalTitle');
 
-    // Custom assets
+    // Custom assets (loaded from project root defaults)
     let birdImage = null;
     let pipeImage = null;
     let bgImage = null;
-    let gameOverImage = null; // uploaded game over image (from UI)
     let bgMusic = null;
     let crashSound = null;
     let lostSound = null;
@@ -396,89 +346,9 @@
     const pipeGap = 240;
         const pipeFrequency = 90;
 
-        // File upload handlers
-        document.getElementById('bird-upload').addEventListener('change', (e) => {
-            handleImageUpload(e, 'bird');
-        });
+        // Upload handlers removed — game will use default assets placed next to index.html
 
-        document.getElementById('pipe-upload').addEventListener('change', (e) => {
-            handleImageUpload(e, 'pipe');
-        });
-
-        document.getElementById('bg-upload').addEventListener('change', (e) => {
-            handleImageUpload(e, 'bg');
-        });
-
-        document.getElementById('gameover-upload').addEventListener('change', (e) => {
-            handleImageUpload(e, 'gameOver');
-        });
-
-        document.getElementById('bgmusic-upload').addEventListener('change', (e) => {
-            handleAudioUpload(e, 'bgMusic');
-        });
-
-        document.getElementById('crash-upload').addEventListener('change', (e) => {
-            handleAudioUpload(e, 'crash');
-        });
-        
-        document.getElementById('lost-upload').addEventListener('change', (e) => {
-            handleAudioUpload(e, 'lost');
-        });
-
-        document.getElementById('win-upload').addEventListener('change', (e) => {
-            handleAudioUpload(e, 'win');
-        });
-
-        function handleImageUpload(event, type) {
-            const file = event.target.files[0];
-            if (!file) return;
-
-            const img = new Image();
-            img.src = URL.createObjectURL(file);
-            img.onload = () => {
-                switch(type) {
-                    case 'bird':
-                        birdImage = img;
-                        // If the user uploads a bird, size it to the uploaded
-                        // image's natural dimensions scaled by birdScale so it
-                        // remains playable.
-                        if (img.width && img.height) {
-                            bird.width = Math.round(img.width * birdScale);
-                            bird.height = Math.round(img.height * birdScale);
-                        }
-                        break;
-                    case 'pipe':
-                        pipeImage = img;
-                        break;
-                    case 'bg':
-                        bgImage = img;
-                        break;
-                    case 'gameOver':
-                        gameOverImage = img;
-                        gameOverImageEl.src = img.src;
-                        gameOverImageEl.style.display = 'block';
-                        break;
-                }
-            };
-        }
-
-        function handleAudioUpload(event, type) {
-            const file = event.target.files[0];
-            if (!file) return;
-
-            const audio = new Audio();
-            audio.src = URL.createObjectURL(file);
-
-            if (type === 'bgMusic') {
-                bgMusic = audio;
-            } else if (type === 'crash') {
-                crashSound = audio;
-            } else if (type === 'lost') {
-                lostSound = audio;
-            } else if (type === 'win') {
-                winSound = audio;
-            }
-        }
+        // Upload helper functions removed — uploads not supported in this build.
 
         function drawBird() {
             if (birdImage && birdImage.complete) {
@@ -660,17 +530,12 @@
             if (won) {
                 if (defaultWinImage && defaultWinImage.src) {
                     gameOverImageEl.src = defaultWinImage.src;
-                } else if (gameOverImage && gameOverImage.src) {
-                    // If user uploaded a specific gameOver image, use it as fallback
-                    gameOverImageEl.src = gameOverImage.src;
                 } else {
                     gameOverImageEl.src = '';
                 }
             } else {
                 if (defaultGameOverImage && defaultGameOverImage.src) {
                     gameOverImageEl.src = defaultGameOverImage.src;
-                } else if (gameOverImage && gameOverImage.src) {
-                    gameOverImageEl.src = gameOverImage.src;
                 } else {
                     gameOverImageEl.src = '';
                 }
