@@ -246,6 +246,18 @@
                     <input type="file" id="crash-upload" accept="audio/*">
                     <label for="crash-upload" class="upload-btn">Upload Crash Sound</label>
                 </div>
+                
+                <div class="upload-group">
+                    <label for="lost-upload">Lost Sound</label>
+                    <input type="file" id="lost-upload" accept="audio/*">
+                    <label for="lost-upload" class="upload-btn">Upload Lost Sound</label>
+                </div>
+
+                <div class="upload-group">
+                    <label for="win-upload">Win Sound</label>
+                    <input type="file" id="win-upload" accept="audio/*">
+                    <label for="win-upload" class="upload-btn">Upload Win Sound</label>
+                </div>
             </div>
         </div>
     </div>
@@ -275,6 +287,8 @@
     let gameOverImage = null; // uploaded game over image (from UI)
     let bgMusic = null;
     let crashSound = null;
+    let lostSound = null;
+    let winSound = null;
 
     // Default popup images (loaded from project root if present)
     let defaultWinImage = null;
@@ -317,6 +331,26 @@
             // Default popup images (win / game over)
             defaultWinImage = makeImage('win.png');
             defaultGameOverImage = makeImage('gameOver.jpg');
+            
+            // Attempt to load default audio files if present in project root
+            function makeAudio(path, onload) {
+                const a = new Audio();
+                a.src = path;
+                a.preload = 'auto';
+                a.oncanplaythrough = () => {
+                    if (typeof onload === 'function') onload(a);
+                };
+                a.onerror = () => {
+                    // ignore missing/default audio
+                };
+                return a;
+            }
+
+            // Default audio: bgmusic.mp3, lost.mp3, win.mp3
+            // These will be used if the user hasn't uploaded custom files.
+            const _bg = makeAudio('bgmusic.mp3', (a) => { if (!bgMusic) { a.loop = true; bgMusic = a; } });
+            const _lost = makeAudio('lost.mp3', (a) => { if (!lostSound) lostSound = a; });
+            const _win = makeAudio('win.mp3', (a) => { if (!winSound) winSound = a; });
         })();
 
         // Game variables
@@ -370,6 +404,14 @@
         document.getElementById('crash-upload').addEventListener('change', (e) => {
             handleAudioUpload(e, 'crash');
         });
+        
+        document.getElementById('lost-upload').addEventListener('change', (e) => {
+            handleAudioUpload(e, 'lost');
+        });
+
+        document.getElementById('win-upload').addEventListener('change', (e) => {
+            handleAudioUpload(e, 'win');
+        });
 
         function handleImageUpload(event, type) {
             const file = event.target.files[0];
@@ -415,6 +457,10 @@
                 bgMusic = audio;
             } else if (type === 'crash') {
                 crashSound = audio;
+            } else if (type === 'lost') {
+                lostSound = audio;
+            } else if (type === 'win') {
+                winSound = audio;
             }
         }
 
@@ -545,13 +591,10 @@
                     score++;
 
                     // If player has passed 10 pillars, they win
-                    if (score >= 10) {
+                    if (score >= 5) {
                         gameActive = false;
                         // Show win modal
                         showGameOver(true);
-                        if (bgMusic) {
-                            bgMusic.pause();
-                        }
                         return;
                     }
                 }
@@ -564,13 +607,6 @@
             if (checkCollision()) {
                 gameActive = false;
                 showGameOver(false);
-                if (crashSound) {
-                    crashSound.currentTime = 0;
-                    crashSound.play();
-                }
-                if (bgMusic) {
-                    bgMusic.pause();
-                }
                 return;
             }
 
@@ -622,6 +658,24 @@
                 gameOverImageEl.style.display = 'block';
             } else {
                 gameOverImageEl.style.display = 'none';
+            }
+
+            // Pause background music (if any) and play the appropriate
+            // win/lost sound. We prefer explicit winSound/lostSound and
+            // fall back to crashSound for losses if provided.
+            if (bgMusic) {
+                try { bgMusic.pause(); } catch (e) { }
+            }
+
+            if (won) {
+                if (winSound) {
+                    try { winSound.currentTime = 0; winSound.play(); } catch (e) { }
+                }
+            } else {
+                const loseAudio = lostSound || crashSound;
+                if (loseAudio) {
+                    try { loseAudio.currentTime = 0; loseAudio.play(); } catch (e) { }
+                }
             }
 
             modal.classList.add('active');
