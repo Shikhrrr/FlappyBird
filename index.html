@@ -281,7 +281,7 @@
     <div id="gameOverModal" class="modal">
         <div class="modal-content">
             <img id="gameOverImage" src="" alt="Game Over" style="display: none;">
-            <h2>Game Over!</h2>
+            <h2 id="modalTitle">Game Over!</h2>
             <p>Final Score: <span id="finalScore">0</span></p>
             <button class="restart-btn" onclick="restartGame()">Play Again</button>
         </div>
@@ -293,7 +293,8 @@
         const modal = document.getElementById('gameOverModal');
         const finalScoreEl = document.getElementById('finalScore');
         const instructionsEl = document.getElementById('instructions');
-        const gameOverImageEl = document.getElementById('gameOverImage');
+    const gameOverImageEl = document.getElementById('gameOverImage');
+    const modalTitleEl = document.getElementById('modalTitle');
 
     // Custom assets
     let birdImage = null;
@@ -630,6 +631,8 @@
         }
 
         function handleJump() {
+            // Prevent interactions when the game-over/win modal is visible
+            if (modal && modal.classList && modal.classList.contains('active')) return;
             if (!gameActive) {
                 gameActive = true;
                 gameStarted = true;
@@ -649,6 +652,10 @@
         // otherwise fall back to any uploaded `gameOverImage`.
         function showGameOver(won = false) {
             finalScoreEl.textContent = score;
+            // Update modal title depending on win/loss
+            try {
+                if (modalTitleEl) modalTitleEl.textContent = won ? 'You won!' : 'Game Over!';
+            } catch (e) { /* ignore */ }
 
             if (won) {
                 if (defaultWinImage && defaultWinImage.src) {
@@ -705,6 +712,17 @@
             score = 0;
             gameActive = false;
             gameStarted = false;
+            // Stop any end-game sounds that might still be playing (win/lost/crash)
+            try {
+                if (winSound) { winSound.pause(); winSound.currentTime = 0; }
+            } catch (e) { /* ignore */ }
+            try {
+                if (lostSound) { lostSound.pause(); lostSound.currentTime = 0; }
+            } catch (e) { /* ignore */ }
+            try {
+                if (crashSound) { crashSound.pause(); crashSound.currentTime = 0; }
+            } catch (e) { /* ignore */ }
+
             modal.classList.remove('active');
             instructionsEl.textContent = 'Click the game or press Space to start!';
 
@@ -718,6 +736,9 @@
         // Event listeners
         window.addEventListener('keydown', (e) => {
             if (e.code === 'Space') {
+                // Ignore space if the modal is active (won/lost) so the
+                // game isn't restarted while the popup is visible.
+                if (modal && modal.classList && modal.classList.contains('active')) return;
                 e.preventDefault();
                 handleJump();
             }
